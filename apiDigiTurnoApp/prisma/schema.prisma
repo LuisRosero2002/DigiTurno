@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CLIENTES {
+  ID_CLIENTE  Int      @id @default(autoincrement())
+  NOMBRE      String
+  APELLIDO    String
+  TELEFONO    Int
+  CEDULA      Int     @unique
+  TURNOS      TURNOS[]
+}
+
+model SERVICIOS {
+  ID_SERVICIO  Int      @id @default(autoincrement())
+  DESCRIPCION  String
+  EMPLEADOS_SERVICIOS  EMPLEADOS_SERVICIOS[]
+  TURNOS      TURNOS[]
+}
+
+model ESTADOS {
+  ID_ESTADO   Int      @id @default(autoincrement())
+  DESCRIPCION String
+  TURNOS      TURNOS[]
+
+}
+
+model EMPLEADOS {
+  ID_EMPLEADO          Int                      @id @default(autoincrement())
+  NOMBRE               String
+  APELLIDO             String
+  CARGO                String
+  CEDULA               Int                      @unique
+  EMPLEADOS_SERVICIOS  EMPLEADOS_SERVICIOS[]
+  TURNOS               TURNOS[]
+}
+
+
+model EMPLEADOS_SERVICIOS {
+  ID_EMPLEADO_SERVICIO   Int      @id @default(autoincrement())
+  ID_EMPLEADO            Int
+  ID_SERVICIO            Int
+  EMPLEADO               EMPLEADOS @relation(fields: [ID_EMPLEADO],references: [ID_EMPLEADO])
+  SERVICIO               SERVICIOS @relation(fields: [ID_SERVICIO],references: [ID_SERVICIO])
+
+}
+
+model TURNOS {
+  ID_TURNO      Int      @id @default(autoincrement())
+  ID_CLIENTE    Int
+  ID_EMPLEADO   Int
+  ID_SERVICIO   Int
+  ID_ESTADO     Int
+  FECHA         DateTime
+  LUGAR         String
+  CLIENTE               CLIENTES @relation(fields: [ID_CLIENTE],references: [ID_CLIENTE])
+  EMPLEADO              EMPLEADOS @relation(fields: [ID_EMPLEADO],references: [ID_EMPLEADO])
+  SERVICIO              SERVICIOS @relation(fields: [ID_SERVICIO],references: [ID_SERVICIO])
+  ESTADO                ESTADOS @relation(fields: [ID_ESTADO],references: [ID_ESTADO])
+
+}

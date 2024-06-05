@@ -86,29 +86,29 @@ router.post('/turno', async (req, res) => {
 
         const turno = await prisma.tURNOS.findUnique({
             where: {
-              ID_TURNO: turnoPost.ID_TURNO,
+                ID_TURNO: turnoPost.ID_TURNO,
             },
             select: {
-              FECHA: true,
-              LUGAR: true,
-              EMPLEADO: {
-                select: {
-                  NOMBRE: true,
-                  APELLIDO: true
+                FECHA: true,
+                LUGAR: true,
+                EMPLEADO: {
+                    select: {
+                        NOMBRE: true,
+                        APELLIDO: true
+                    },
                 },
-              },
-              SERVICIO: {
-                select: {
-                  DESCRIPCION: true,
+                SERVICIO: {
+                    select: {
+                        DESCRIPCION: true,
+                    },
                 },
-              },
-              ESTADO: {
-                select: {
-                  DESCRIPCION: true,
+                ESTADO: {
+                    select: {
+                        DESCRIPCION: true,
+                    },
                 },
-              },
             },
-          });
+        });
 
 
         const formattedTurno = {
@@ -138,7 +138,62 @@ router.get('/turnos', async (req, res) => {
             }
         });
 
-        res.status(200).json(turnos_espera);
+        let turnos_Libre = []
+
+        // Filtra los empleados que estan libres para dar el servicio 
+        const procesarTurnos = async () => {
+
+            for (const turno of turnos_espera) {
+
+                const turno_filtrados = await prisma.tURNOS.findUnique({
+                    where: {
+                        ID_TURNO: turno.ID_TURNO,
+                    },
+                    select: {
+                        FECHA: true,
+                        LUGAR: true,
+                        EMPLEADO: {
+                            select: {
+                                NOMBRE: true,
+                                APELLIDO: true
+                            },
+                        },
+                        SERVICIO: {
+                            select: {
+                                DESCRIPCION: true,
+                            },
+                        },
+                        ESTADO: {
+                            select: {
+                                DESCRIPCION: true,
+                            },
+                        },
+                    },
+                });
+
+
+                turnos_Libre.push(turno_filtrados);
+            }
+            return turnos_Libre;
+        };
+
+        const turnos_finales = await procesarTurnos()
+        let turnos_bien = []
+
+        for (const element of turnos_finales) {
+
+            turnos_bien.push({
+                NOMBRE_EMPLEADO: `${element.EMPLEADO.NOMBRE} ${element.EMPLEADO.APELLIDO}`,
+                SERVICIO_DESCRIPCION: element.SERVICIO.DESCRIPCION,
+                ESTADO_DESCRIPCION: element.ESTADO.DESCRIPCION,
+                FECHA: element.FECHA,
+                LUGAR: element.LUGAR,
+            });
+            
+        
+        }
+
+        res.status(200).json(turnos_bien);
 
     } catch (error) {
         console.error(error);

@@ -201,23 +201,24 @@ router.get('/turnos', async (req, res) => {
     }
 });
 
+// Endpoint para actualizar el estado del turno
 router.put('/turno/:id', async (req, res) => {
     try {
-
-
         const id_turno = parseInt(req.params.id);
-        const turnoActualizado = await prisma.TURNOS.update({
-            where: {
-                ID_TURNO: id_turno
-            },
-            data: {
-                ID_ESTADO: 3
-            }
-        });
+        const nuevo_estado = req.body.nuevo_estado; // Nuevo estado enviado en el cuerpo de la solicitud
 
-
-        res.status(200).json(turnoActualizado);
-
+        // Validar que el nuevo estado sea válido (por ejemplo, 'en proceso' o 'finalizado')
+        if (nuevo_estado && (nuevo_estado === 'en proceso' || nuevo_estado === 'finalizado')) {
+            // Actualizar el estado del turno en la base de datos
+            const turnoActualizado = await prisma.TURNOS.update({
+                where: { ID_TURNO: id_turno },
+                data: { ID_ESTADO: nuevo_estado }
+            });
+            
+            res.status(200).json(turnoActualizado);
+        } else {
+            res.status(400).json({ error: 'Estado de turno no válido' });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Ha ocurrido un error en el servidor.' });

@@ -11,6 +11,7 @@ router.post('/login', async (req, res) => {
         });
         res.status(201).json(user);
     } catch (error) {
+
         console.error(error);
         res.status(500).json({ error: 'Ha ocurrido un error en el servidor.' });
     }
@@ -18,17 +19,25 @@ router.post('/login', async (req, res) => {
 
 router.get('/login/:id', async (req, res) => {
     try {
-        const cedula_user =  parseInt(req.params.id);
+        const cedula_user = parseInt(req.params.id);
         const user = await prisma.cLIENTES.findFirst({
-            where:{
+            where: {
                 CEDULA: cedula_user
             }
-        })
-        res.status(200).json(user);
+        });
+
+        if (user) {
+            // Si se encuentra el usuario, enviarlo como respuesta
+            res.status(200).json(user);
+        } else {
+            // Si no se encuentra el usuario, redirigir al formulario de inicio de sesión
+            res.redirect('/login'); // Cambia '/login' por la ruta real de tu formulario de inicio de sesión
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Ha ocurrido un error en el servidor.' });
     }
 });
+
 
 export default router;

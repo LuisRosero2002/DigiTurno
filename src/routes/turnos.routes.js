@@ -104,7 +104,7 @@ router.post('/turno', async (req, res) => {
     }
 });
 
-// turnos en espera
+// turnos en espera 
 router.get('/turnos', async (req, res) => {
     try {
 
@@ -130,6 +130,7 @@ router.get('/turnos', async (req, res) => {
                     select: {
                         FECHA: true,
                         LUGAR: true,
+                        ID_TURNO:true,
                         SERVICIO: {
                             select: {
                                 DESCRIPCION: true,
@@ -140,7 +141,7 @@ router.get('/turnos', async (req, res) => {
                                 DESCRIPCION: true,
                             },
                         },
-                    },
+                    }
                 });
 
 
@@ -155,6 +156,7 @@ router.get('/turnos', async (req, res) => {
         for (const element of turnos_finales) {
 
             turnos_bien.push({
+                ID: element.ID_TURNO,
                 NOMBRE_EMPLEADO: '',
                 SERVICIO_DESCRIPCION: element.SERVICIO.DESCRIPCION,
                 ESTADO_DESCRIPCION: element.ESTADO.DESCRIPCION,
@@ -163,11 +165,7 @@ router.get('/turnos', async (req, res) => {
             });
         }
 
-        const turnosFilter = turnos_bien.sort((a, b) => {
-            const dataA = new Date(a)
-            const dataB = new Date(b)
-            return dataA - dataB
-        })
+        const turnosFilter = turnos_bien.sort((a, b) => new Date(a.FECHA) - new Date(b.FECHA));
 
         const turnosUnicos = new Set();
         const filtrados = [];
@@ -187,9 +185,10 @@ router.get('/turnos', async (req, res) => {
     }
 });
 
-// Endpoint para actualizar el estado del turno
+// Endpoint para actualizar el estado del turno a finializado
 router.put('/turnoUpdate', async (req, res) => {
     try {
+
 
         const data = req.body
            
@@ -206,8 +205,7 @@ router.put('/turnoUpdate', async (req, res) => {
     }
 });
 
-
-// EndPoint para el empleado cuando inicia turnos
+// EndPoint para el empleado cuando inicia y siguinte turnos
 router.get('/turno/:id', async (req, res) => {
     try {
 
@@ -238,7 +236,7 @@ router.get('/turno/:id', async (req, res) => {
     
             const turnoActualizado = await prisma.tURNOS.update({
                 where: {
-                    ID_TURNO: id_turno, // Condición para encontrar el turno que quieres actualizar
+                    ID_TURNO: id_turno,
                 },
                 data: {
                     ID_EMPLEADO: id_empleado,
@@ -254,6 +252,12 @@ router.get('/turno/:id', async (req, res) => {
                     FECHA: true,
                     LUGAR: true,
                     ID_TURNO: true,
+                    CLIENTE:{
+                        select:{
+                            NOMBRE:true,
+                            APELLIDO: true                    
+                        }
+                    },
                     EMPLEADO: {
                         select: {
                             NOMBRE: true,
@@ -278,6 +282,7 @@ router.get('/turno/:id', async (req, res) => {
                 NOMBRE_EMPLEADO: turno_formateado.EMPLEADO.NOMBRE + ' '+ turno_formateado.EMPLEADO.APELLIDO,
                 SERVICIO_DESCRIPCION: turno_formateado.SERVICIO.DESCRIPCION,
                 ESTADO_DESCRIPCION: turno_formateado.ESTADO.DESCRIPCION,
+                CLIENTE : turno_formateado.CLIENTE.NOMBRE + ' '+ turno_formateado.CLIENTE.APELLIDO,
                 FECHA: turno_formateado.FECHA,
                 LUGAR: turno_formateado.LUGAR,
             };
@@ -294,6 +299,93 @@ router.get('/turno/:id', async (req, res) => {
 
 })
 
+// Endpoint para dar siguiente en los turnos
+// router.get('/turnoSiguiente/:id', async (req, res) => {
+//     try {
+
+//         const id_empleado = parseInt(req.params.id);
+//         const data = req.body
+
+//         // const turnosEmpleado = await prisma.eMPLEADOS_SERVICIOS.findMany({
+//         //     where: {
+//         //         ID_EMPLEADO: id_empleado
+//         //     }
+//         // });
+
+//         const servicios = turnosEmpleado.map(x => x.ID_SERVICIO)
+
+//         const turnos = await prisma.tURNOS.findMany({
+//             where: {
+//                 ID_SERVICIO: {
+//                     in: servicios,
+//                 },
+//                 ID_EMPLEADO: null,
+//             },
+//             orderBy: {
+//                 FECHA: 'asc',
+//             },
+//         });
+
+//         if(turnos.length > 0){
+//             const id_turno = turnos[0].ID_TURNO
+    
+//             const turnoActualizado = await prisma.tURNOS.update({
+//                 where: {
+//                     ID_TURNO: id_turno,
+//                 },
+//                 data: {
+//                     ID_EMPLEADO: id_empleado,
+//                     ID_ESTADO: 2,  
+//                 },
+//             });
+    
+//             const turno_formateado = await prisma.tURNOS.findUnique({
+//                 where: {
+//                     ID_TURNO: turnoActualizado.ID_TURNO,
+//                 },
+//                 select: {
+//                     FECHA: true,
+//                     LUGAR: true,
+//                     ID_TURNO: true,
+//                     EMPLEADO: {
+//                         select: {
+//                             NOMBRE: true,
+//                             APELLIDO: true
+//                         },
+//                     },
+//                     SERVICIO: {
+//                         select: {
+//                             DESCRIPCION: true,
+//                         },
+//                     },
+//                     ESTADO: {
+//                         select: {
+//                             DESCRIPCION: true,
+//                         },
+//                     },
+//                 },
+//             });
+    
+//             const turnos_bien = {
+//                 ID: turno_formateado.ID_TURNO,
+//                 NOMBRE_EMPLEADO: turno_formateado.EMPLEADO.NOMBRE + ' '+ turno_formateado.EMPLEADO.APELLIDO,
+//                 SERVICIO_DESCRIPCION: turno_formateado.SERVICIO.DESCRIPCION,
+//                 ESTADO_DESCRIPCION: turno_formateado.ESTADO.DESCRIPCION,
+//                 FECHA: turno_formateado.FECHA,
+//                 LUGAR: turno_formateado.LUGAR,
+//             };
+//             res.status(200).json(turnos_bien);
+//         }else{
+//             res.status(200).json([]);
+//         }
+
+
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Ha ocurrido un error en el servidor.' });
+//     }
+
+// })
 
 
 

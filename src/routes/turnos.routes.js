@@ -159,7 +159,7 @@ router.get('/turnos', async (req, res) => {
         for (const element of turnos_finales) {
 
             turnos_bien.push({
-                NOMBRE_EMPLEADO: `${element.EMPLEADO.NOMBRE} ${element.EMPLEADO.APELLIDO}`,
+                NOMBRE_EMPLEADO: '',
                 SERVICIO_DESCRIPCION: element.SERVICIO.DESCRIPCION,
                 ESTADO_DESCRIPCION: element.ESTADO.DESCRIPCION,
                 FECHA: element.FECHA,

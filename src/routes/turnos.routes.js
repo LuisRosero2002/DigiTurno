@@ -9,40 +9,16 @@ router.post('/turno', async (req, res) => {
         const data = req.body
 
         // Trae los empleados que puedan brindar el servico escogido 
-        const empleados = await prisma.EMPLEADOS_SERVICIOS.findMany({
-            where: {
-                ID_SERVICIO: data.ID_SERVICIO
-            },
-            include: {
-                EMPLEADO: true
-            }
-        });
-
-        // let empleadosLibre = []
-
-        // Filtra los empleados que estan libres para dar el servicio 
-        // const procesarEmpleados = async () => {
-
-        //     for (const empleado of empleados) {
-        //         console.log(empleado.ID_EMPLEADO);
-
-        //         const empleadoLibre = await prisma.tURNOS.findFirst({
-        //             where: {
-        //                 ID_EMPLEADO: empleado.ID_EMPLEADO,
-        //                 ID_ESTADO: { in: [1, 2] } 
-        //             }
-        //         });
-
-        //         empleadosLibre.push(empleadoLibre);
+        // const empleados = await prisma.EMPLEADOS_SERVICIOS.findMany({
+        //     where: {
+        //         ID_SERVICIO: data.ID_SERVICIO
+        //     },
+        //     include: {
+        //         EMPLEADO: true
         //     }
-        //     return empleadosLibre;
-        // };
+        // });
 
-        // const empleados_filtrados = await procesarEmpleados()
-
-        // const empleadoSeleccionado = empleados_filtrados[Math.random() * (empleadosLibre.length - 1)]
-
-        const empleadoSeleccionado = empleados[Math.random() * (empleados.length - 1)]
+        // const empleadoSeleccionado = empleados[Math.random() * (empleados.length - 1)]
 
         const turnos_filtrados = await prisma.tURNOS.findMany({
             where: {
@@ -76,7 +52,7 @@ router.post('/turno', async (req, res) => {
         const turnoPost = await prisma.tURNOS.create({
             data: {
                 ID_CLIENTE: data.ID_CLIENTE,
-                ID_EMPLEADO: empleadoSeleccionado.ID_EMPLEADO,
+                ID_EMPLEADO: null,
                 ID_SERVICIO: data.ID_SERVICIO,
                 ID_ESTADO: 1,
                 FECHA: new Date(),
@@ -112,7 +88,7 @@ router.post('/turno', async (req, res) => {
 
 
         const formattedTurno = {
-            NOMBRE_EMPLEADO: `${turno.EMPLEADO.NOMBRE} ${turno.EMPLEADO.APELLIDO}`,
+            NOMBRE_EMPLEADO: '',
             SERVICIO_DESCRIPCION: turno.SERVICIO.DESCRIPCION,
             ESTADO_DESCRIPCION: turno.ESTADO.DESCRIPCION,
             FECHA: turno.FECHA,

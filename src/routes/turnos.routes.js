@@ -110,7 +110,9 @@ router.get('/turnos', async (req, res) => {
 
         const turnos_espera = await prisma.tURNOS.findMany({
             where: {
-                ID_ESTADO: 1
+                ID_ESTADO: {
+                    in:[1,2]
+                }
             }
         });
 
@@ -128,12 +130,6 @@ router.get('/turnos', async (req, res) => {
                     select: {
                         FECHA: true,
                         LUGAR: true,
-                        EMPLEADO: {
-                            select: {
-                                NOMBRE: true,
-                                APELLIDO: true
-                            },
-                        },
                         SERVICIO: {
                             select: {
                                 DESCRIPCION: true,
@@ -165,11 +161,25 @@ router.get('/turnos', async (req, res) => {
                 FECHA: element.FECHA,
                 LUGAR: element.LUGAR,
             });
-            
-        
         }
 
-        res.status(200).json(turnos_bien);
+        const turnosFilter = turnos_bien.sort((a, b) => {
+            const dataA = new Date(a)
+            const dataB = new Date(b)
+            return dataA - dataB
+        })
+
+        const turnosUnicos = new Set();
+        const filtrados = [];
+
+        turnosFilter.forEach(item => {
+            if (!turnosUnicos.has(item.SERVICIO_DESCRIPCION)) {
+                turnosUnicos.add(item.SERVICIO_DESCRIPCION);
+                filtrados.push(item);
+            }
+        });
+
+        res.status(200).json(filtrados);
 
     } catch (error) {
         console.error(error);
@@ -178,28 +188,113 @@ router.get('/turnos', async (req, res) => {
 });
 
 // Endpoint para actualizar el estado del turno
-router.put('/turno/:id', async (req, res) => {
+router.put('/turnoUpdate', async (req, res) => {
     try {
-        const id_turno = parseInt(req.params.id);
-        const nuevo_estado = req.body.nuevo_estado; // Nuevo estado enviado en el cuerpo de la solicitud
 
-        // Validar que el nuevo estado sea válido (por ejemplo, 'en proceso' o 'finalizado')
-        if (nuevo_estado && (nuevo_estado === 'en proceso' || nuevo_estado === 'finalizado')) {
-            // Actualizar el estado del turno en la base de datos
-            const turnoActualizado = await prisma.TURNOS.update({
-                where: { ID_TURNO: id_turno },
-                data: { ID_ESTADO: nuevo_estado }
-            });
-            
-            res.status(200).json(turnoActualizado);
-        } else {
-            res.status(400).json({ error: 'Estado de turno no válido' });
-        }
+        const data = req.body
+           
+        const turnoActualizado = await prisma.TURNOS.update({
+            where: { ID_TURNO: data.ID },
+            data: { ID_ESTADO: 3 }
+        });
+
+        res.status(200).json(turnoActualizado);
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Ha ocurrido un error en el servidor.' });
     }
 });
+
+
+// EndPoint para el empleado cuando inicia turnos
+router.get('/turno/:id', async (req, res) => {
+    try {
+
+        const id_empleado = parseInt(req.params.id);
+
+        const turnosEmpleado = await prisma.eMPLEADOS_SERVICIOS.findMany({
+            where: {
+                ID_EMPLEADO: id_empleado
+            }
+        });
+
+        const servicios = turnosEmpleado.map(x => x.ID_SERVICIO)
+
+        const turnos = await prisma.tURNOS.findMany({
+            where: {
+                ID_SERVICIO: {
+                    in: servicios,
+                },
+                ID_EMPLEADO: null,
+            },
+            orderBy: {
+                FECHA: 'asc',
+            },
+        });
+
+        if(turnos.length > 0){
+            const id_turno = turnos[0].ID_TURNO
+    
+            const turnoActualizado = await prisma.tURNOS.update({
+                where: {
+                    ID_TURNO: id_turno, // Condición para encontrar el turno que quieres actualizar
+                },
+                data: {
+                    ID_EMPLEADO: id_empleado,
+                    ID_ESTADO: 2,  
+                },
+            });
+    
+            const turno_formateado = await prisma.tURNOS.findUnique({
+                where: {
+                    ID_TURNO: turnoActualizado.ID_TURNO,
+                },
+                select: {
+                    FECHA: true,
+                    LUGAR: true,
+                    ID_TURNO: true,
+                    EMPLEADO: {
+                        select: {
+                            NOMBRE: true,
+                            APELLIDO: true
+                        },
+                    },
+                    SERVICIO: {
+                        select: {
+                            DESCRIPCION: true,
+                        },
+                    },
+                    ESTADO: {
+                        select: {
+                            DESCRIPCION: true,
+                        },
+                    },
+                },
+            });
+    
+            const turnos_bien = {
+                ID: turno_formateado.ID_TURNO,
+                NOMBRE_EMPLEADO: turno_formateado.EMPLEADO.NOMBRE + ' '+ turno_formateado.EMPLEADO.APELLIDO,
+                SERVICIO_DESCRIPCION: turno_formateado.SERVICIO.DESCRIPCION,
+                ESTADO_DESCRIPCION: turno_formateado.ESTADO.DESCRIPCION,
+                FECHA: turno_formateado.FECHA,
+                LUGAR: turno_formateado.LUGAR,
+            };
+            res.status(200).json(turnos_bien);
+        }else{
+            res.status(200).json([]);
+        }
+
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Ha ocurrido un error en el servidor.' });
+    }
+
+})
+
+
 
 
 
